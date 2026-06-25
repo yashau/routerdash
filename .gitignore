@@ -1,0 +1,10 @@
+/dist/
+/screenshots/
+/web/.svelte-kit/
+/web/build/
+/web/node_modules/
+
+*.log
+*.tmp
+.DS_Store
+Thumbs.db

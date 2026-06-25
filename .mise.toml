@@ -1,0 +1,95 @@
+[tools]
+go = "1.26"
+node = "24"
+pnpm = "11"
+
+[tasks.setup]
+description = "Install all workspace dependencies"
+run = "pnpm --dir web install"
+
+[tasks.web-check]
+description = "Run Svelte and frontend lint gates"
+run = ["pnpm --dir web check", "pnpm --dir web lint", "pnpm --dir web format:check"]
+
+[tasks.web-format]
+description = "Format frontend files"
+run = "pnpm --dir web format"
+
+[tasks.root-format]
+description = "Format root workspace scripts and config"
+run = "node scripts/root-format.mjs"
+
+[tasks.root-format-check]
+description = "Check root workspace script and config formatting"
+run = "node scripts/root-format.mjs --check"
+
+[tasks.version]
+description = "Show the current project version"
+run = "node scripts/version.mjs show"
+
+[tasks.version-check]
+description = "Validate VERSION uses YYYY.MM.DD-N"
+run = "node scripts/version.mjs check"
+
+[tasks.version-bump]
+description = "Bump VERSION for today's YYYY.MM.DD-N release"
+run = "node scripts/version.mjs bump"
+
+[tasks.go-format]
+description = "Format Go files"
+run = "node scripts/go-format.mjs"
+
+[tasks.format]
+description = "Format the full workspace"
+run = ["mise run go-format", "mise run root-format", "mise run web-format"]
+
+[tasks.go-check]
+description = "Run Go format, vet, and tests"
+run = ["mise run build-web", "node scripts/check-gofmt.mjs", "go vet ./...", "go test ./..."]
+
+[tasks.build-web]
+description = "Build the SvelteKit static assets"
+run = "pnpm --dir web build"
+
+[tasks.build-local]
+description = "Build a local preview binary for this machine"
+run = "node scripts/build.mjs local"
+
+[tasks.screenshots]
+description = "Build the local fake app and capture UI screenshots"
+run = ["mise run build-local", "node scripts/screenshots.mjs"]
+
+[tasks.build-linux]
+description = "Build the Linux amd64 systemd binary"
+run = "node scripts/build.mjs linux-amd64"
+
+[tasks.build-linux-arm64]
+description = "Build the Linux arm64 systemd binary"
+run = "node scripts/build.mjs linux-arm64"
+
+[tasks.build]
+description = "Build the default deployable Linux binary"
+run = "mise run build-linux"
+
+[tasks.pack]
+description = "Build and package the Linux amd64 binary with the systemd unit"
+run = ["mise run build-linux", "node scripts/pack.mjs linux-amd64"]
+
+[tasks.pack-arm64]
+description = "Build and package the Linux arm64 binary with the systemd unit"
+run = ["mise run build-linux-arm64", "node scripts/pack.mjs linux-arm64"]
+
+[tasks.check]
+description = "Run all checks, tests, gates, and build verification"
+run = [
+  "mise run version-check",
+  "mise run root-format-check",
+  "mise run web-check",
+  "mise run go-check",
+  "node scripts/check-loc.mjs",
+  "mise run build",
+]
+
+[tasks.gate]
+description = "Alias for check"
+depends = ["check"]
