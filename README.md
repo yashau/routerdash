@@ -15,6 +15,8 @@
   <img alt="read only" src="https://img.shields.io/badge/router-read--only-008F5A?style=for-the-badge">
 </p>
 
+![Dashboard in dark mode](docs/screenshots/dashboard-dark.png)
+
 RouterDash is a single Go binary that runs on a Linux router as a systemd service.
 It serves an embedded SvelteKit web UI, gathers local router status through normal
 system tools, and exposes a small set of bounded network diagnostics.
@@ -22,8 +24,6 @@ system tools, and exposes a small set of bounded network diagnostics.
 It is meant for trusted LAN use: quick router state, routes, firewall output,
 Tailscale details, FRR summaries, and simple ping/MTR checks without SSHing into
 the router every time.
-
-![Dashboard in dark mode](docs/screenshots/dashboard-dark.png)
 
 ## What It Shows
 
@@ -46,20 +46,6 @@ Detailed pages are available for:
 - all installed route tables with server-side pagination
 - FRR OSPF/BGP summaries and running config output
 - ping and MTR diagnostics
-
-<table>
-  <tr>
-    <td><img src="docs/screenshots/tailscale-dark.png" alt="Tailscale page in dark mode"></td>
-    <td><img src="docs/screenshots/routes-dark.png" alt="Routes page in dark mode"></td>
-  </tr>
-  <tr>
-    <td><img src="docs/screenshots/firewall-dark.png" alt="Firewall page in dark mode"></td>
-    <td><img src="docs/screenshots/frr-dark.png" alt="FRR page in dark mode"></td>
-  </tr>
-  <tr>
-    <td colspan="2"><img src="docs/screenshots/diagnostics-dark.png" alt="Diagnostics page in dark mode"></td>
-  </tr>
-</table>
 
 ## What It Does Not Do
 
