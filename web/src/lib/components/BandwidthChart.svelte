@@ -25,8 +25,20 @@
 			{points.length ? `${rate(points.at(-1)?.rx ?? 0)} down / ${rate(points.at(-1)?.tx ?? 0)} up` : 'Collecting'}
 		</span>
 	</div>
-	<svg viewBox={`0 0 ${width} ${height}`} class="h-44 w-full">
-		<path d={pathFor('rx')} fill="none" stroke="oklch(0.54 0.14 154)" stroke-width="3" />
-		<path d={pathFor('tx')} fill="none" stroke="oklch(0.55 0.16 235)" stroke-width="3" />
+	<svg viewBox={`0 0 ${width} ${height}`} class="h-44 w-full" data-bandwidth-chart>
+		<path
+			d={pathFor('rx')}
+			fill="none"
+			stroke="oklch(0.54 0.14 154)"
+			stroke-width="3"
+			data-series="rx"
+		/>
+		<path
+			d={pathFor('tx')}
+			fill="none"
+			stroke="oklch(0.55 0.16 235)"
+			stroke-width="3"
+			data-series="tx"
+		/>
 	</svg>
 </div>

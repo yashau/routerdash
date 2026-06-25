@@ -21,6 +21,7 @@ type Collector struct {
 	fake   bool
 	mu     sync.Mutex
 	prev   *metricSnapshot
+	fakeIx int
 }
 
 type metricSnapshot struct {
@@ -131,22 +132,39 @@ func (c *Collector) Metrics(_ context.Context) Metrics {
 }
 
 func (c *Collector) fakeMetrics() Metrics {
-	now := c.now()
-	base := uint64(now.Unix() % 1000)
+	c.mu.Lock()
+	sample := fakeMetricSamples[c.fakeIx%len(fakeMetricSamples)]
+	c.fakeIx++
+	index := uint64(c.fakeIx)
+	c.mu.Unlock()
+
 	return Metrics{
 		Availability: Availability{Available: true},
-		CPUPercent:   18 + float64(base%27),
+		CPUPercent:   sample.cpu,
 		Memory: MemoryMetrics{
 			UsedBytes:  9261023232,
 			TotalBytes: 17179869184,
 			UsedPct:    53.9,
 		},
 		Interfaces: []InterfaceIO{
-			{Name: "br-lan", RxBytes: 3920010221 + base*15000, TxBytes: 882000122 + base*9000, RxBps: 420000 + float64(base*300), TxBps: 170000 + float64(base*120), OperState: "up", AddressCIDR: "192.168.88.1/24"},
-			{Name: "tailscale0", RxBytes: 229001212 + base*4000, TxBytes: 102004002 + base*2500, RxBps: 42000 + float64(base*30), TxBps: 29000 + float64(base*25), OperState: "up", AddressCIDR: "100.101.102.103/32"},
-			{Name: "wan0", RxBytes: 19220010221 + base*22000, TxBytes: 7829910021 + base*19000, RxBps: 920000 + float64(base*440), TxBps: 610000 + float64(base*220), OperState: "up", AddressCIDR: "100.64.12.9/24"},
+			{Name: "br-lan", RxBytes: 3920010221 + index*15000, TxBytes: 882000122 + index*9000, RxBps: sample.lanRx, TxBps: sample.lanTx, OperState: "up", AddressCIDR: "192.168.88.1/24"},
+			{Name: "tailscale0", RxBytes: 229001212 + index*4000, TxBytes: 102004002 + index*2500, RxBps: sample.tsRx, TxBps: sample.tsTx, OperState: "up", AddressCIDR: "100.101.102.103/32"},
+			{Name: "wan0", RxBytes: 19220010221 + index*22000, TxBytes: 7829910021 + index*19000, RxBps: sample.wanRx, TxBps: sample.wanTx, OperState: "up", AddressCIDR: "100.64.12.9/24"},
 		},
 	}
+}
+
+var fakeMetricSamples = []struct {
+	cpu          float64
+	lanRx, lanTx float64
+	tsRx, tsTx   float64
+	wanRx, wanTx float64
+}{
+	{cpu: 28, lanRx: 420000, lanTx: 180000, tsRx: 42000, tsTx: 32000, wanRx: 780000, wanTx: 520000},
+	{cpu: 36, lanRx: 760000, lanTx: 260000, tsRx: 61000, tsTx: 44000, wanRx: 1260000, wanTx: 780000},
+	{cpu: 31, lanRx: 540000, lanTx: 150000, tsRx: 39000, tsTx: 28000, wanRx: 960000, wanTx: 470000},
+	{cpu: 42, lanRx: 890000, lanTx: 310000, tsRx: 72000, tsTx: 53000, wanRx: 1480000, wanTx: 910000},
+	{cpu: 34, lanRx: 610000, lanTx: 220000, tsRx: 50000, tsTx: 37000, wanRx: 1040000, wanTx: 660000},
 }
 
 func (c *Collector) LAN(ctx context.Context) LANInfo {

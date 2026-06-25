@@ -19,7 +19,7 @@ This repo is `routerdash`: a single Go binary that runs as a systemd service on 
 Configured in `.mise.toml`:
 
 - Go `1.26`
-- Node `24`
+- Node `26`
 - pnpm `11`
 
 Common commands:
@@ -29,6 +29,8 @@ mise run setup
 mise run format
 mise run check
 mise run screenshots
+mise run screenshots:dark
+mise run screenshots:light
 mise run build-local
 mise run pack
 mise run pack-arm64
@@ -36,12 +38,7 @@ mise run version
 mise run version-bump
 ```
 
-`mise run screenshots` starts the fake local binary and writes screenshots to `screenshots/`.
-For README assets, generate dark-mode screenshots with:
-
-```sh
-ROUTERDASH_SCREENSHOTS_DIR=docs/screenshots ROUTERDASH_SCREENSHOTS_COLOR_SCHEME=dark mise run screenshots
-```
+`mise run screenshots` starts the fake local binary and writes both light and dark screenshots to `docs/screenshots/`. Use `mise run screenshots:dark` or `mise run screenshots:light` for one color scheme. Filenames include the scheme, for example `dashboard-dark.png`.
 
 ## Versioning
 
@@ -232,6 +229,8 @@ For UI changes, also run:
 
 ```sh
 mise run screenshots
+mise run screenshots:dark
+mise run screenshots:light
 ```
 
 When deployment is requested, run:

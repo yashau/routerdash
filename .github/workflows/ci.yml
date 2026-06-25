@@ -87,6 +87,8 @@ jobs:
   package:
     name: Package
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     needs:
       - version-gate
       - check
@@ -140,3 +142,17 @@ jobs:
             dist/routerdash-${{ needs.version-gate.outputs.version }}-linux-amd64.tar.gz
             dist/routerdash-${{ needs.version-gate.outputs.version }}-linux-arm64.tar.gz
           if-no-files-found: error
+
+      - name: Create GitHub release
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.version-gate.outputs.version }}
+        shell: bash
+        run: |
+          gh release create "$VERSION" \
+            "dist/routerdash-$VERSION-linux-amd64.tar.gz" \
+            "dist/routerdash-$VERSION-linux-arm64.tar.gz" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$VERSION" \
+            --notes "RouterDash $VERSION"

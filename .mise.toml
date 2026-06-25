@@ -1,6 +1,6 @@
 [tools]
 go = "1.26"
-node = "24"
+node = "26"
 pnpm = "11"
 
 [tasks.setup]
@@ -56,8 +56,20 @@ description = "Build a local preview binary for this machine"
 run = "node scripts/build.mjs local"
 
 [tasks.screenshots]
-description = "Build the local fake app and capture UI screenshots"
-run = ["mise run build-local", "node scripts/screenshots.mjs"]
+description = "Build the local fake app and capture light and dark UI screenshots"
+run = [
+  "mise run build-local",
+  "node scripts/screenshots.mjs --scheme=light",
+  "node scripts/screenshots.mjs --scheme=dark",
+]
+
+[tasks."screenshots:light"]
+description = "Build the local fake app and capture light UI screenshots"
+run = ["mise run build-local", "node scripts/screenshots.mjs --scheme=light"]
+
+[tasks."screenshots:dark"]
+description = "Build the local fake app and capture dark UI screenshots"
+run = ["mise run build-local", "node scripts/screenshots.mjs --scheme=dark"]
 
 [tasks.build-linux]
 description = "Build the Linux amd64 systemd binary"

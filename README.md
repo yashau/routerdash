@@ -23,7 +23,7 @@ It is meant for trusted LAN use: quick router state, routes, firewall output,
 Tailscale details, FRR summaries, and simple ping/MTR checks without SSHing into
 the router every time.
 
-![Dashboard in dark mode](docs/screenshots/dashboard.png)
+![Dashboard in dark mode](docs/screenshots/dashboard-dark.png)
 
 ## What It Shows
 
@@ -49,15 +49,15 @@ Detailed pages are available for:
 
 <table>
   <tr>
-    <td><img src="docs/screenshots/tailscale.png" alt="Tailscale page in dark mode"></td>
-    <td><img src="docs/screenshots/routes.png" alt="Routes page in dark mode"></td>
+    <td><img src="docs/screenshots/tailscale-dark.png" alt="Tailscale page in dark mode"></td>
+    <td><img src="docs/screenshots/routes-dark.png" alt="Routes page in dark mode"></td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/firewall.png" alt="Firewall page in dark mode"></td>
-    <td><img src="docs/screenshots/frr.png" alt="FRR page in dark mode"></td>
+    <td><img src="docs/screenshots/firewall-dark.png" alt="Firewall page in dark mode"></td>
+    <td><img src="docs/screenshots/frr-dark.png" alt="FRR page in dark mode"></td>
   </tr>
   <tr>
-    <td colspan="2"><img src="docs/screenshots/diagnostics.png" alt="Diagnostics page in dark mode"></td>
+    <td colspan="2"><img src="docs/screenshots/diagnostics-dark.png" alt="Diagnostics page in dark mode"></td>
   </tr>
 </table>
 
@@ -156,6 +156,8 @@ Useful tasks:
 ```sh
 mise run format
 mise run screenshots
+mise run screenshots:dark
+mise run screenshots:light
 mise run build-local
 mise run pack-arm64
 mise run version

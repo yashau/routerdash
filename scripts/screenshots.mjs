@@ -1,27 +1,32 @@
 import { spawn, spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { createServer } from "node:net";
-import { mkdir, rm } from "node:fs/promises";
+import { mkdir, readdir, unlink } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const require = createRequire(join(root, "web", "package.json"));
-const screenshotDir = resolve(root, process.env.ROUTERDASH_SCREENSHOTS_DIR ?? "screenshots");
-const colorScheme = process.env.ROUTERDASH_SCREENSHOTS_COLOR_SCHEME ?? "light";
+const screenshotDir = resolve(root, process.env.ROUTERDASH_SCREENSHOTS_DIR ?? "docs/screenshots");
+const schemeArg = process.argv.find((arg) => arg.startsWith("--scheme="))?.split("=", 2)[1];
+const colorScheme = schemeArg ?? process.env.ROUTERDASH_SCREENSHOTS_COLOR_SCHEME ?? "light";
 const viewport = {
   width: Number(process.env.ROUTERDASH_SCREENSHOTS_WIDTH ?? 1120),
   height: Number(process.env.ROUTERDASH_SCREENSHOTS_HEIGHT ?? 900),
 };
 
 const pages = [
-  { path: "/", name: "dashboard" },
+  { path: "/", name: "dashboard", setup: waitForBandwidthChart },
   { path: "/tailscale", name: "tailscale" },
   { path: "/firewall", name: "firewall" },
   { path: "/routes", name: "routes" },
   { path: "/frr", name: "frr" },
   { path: "/diagnostics", name: "diagnostics", setup: runDiagnostic },
 ];
+
+if (!["light", "dark"].includes(colorScheme)) {
+  throw new Error(`Unsupported screenshot color scheme: ${colorScheme}`);
+}
 
 function run(command, args) {
   const executable = process.platform === "win32" && command === "pnpm" ? "cmd.exe" : command;
@@ -82,6 +87,17 @@ async function runDiagnostic(page) {
   });
 }
 
+async function waitForBandwidthChart(page) {
+  await page.waitForFunction(
+    () =>
+      (document
+        .querySelector("[data-bandwidth-chart] [data-series='rx']")
+        ?.getAttribute("d")
+        ?.match(/\bL\b/g)?.length ?? 0) >= 3,
+    { timeout: 12000 },
+  );
+}
+
 async function contentClip(page) {
   return await page.evaluate(() => {
     const elements = Array.from(document.querySelectorAll("header, main, main > *"));
@@ -97,9 +113,18 @@ async function contentClip(page) {
   });
 }
 
-async function main() {
-  await rm(screenshotDir, { recursive: true, force: true });
+async function cleanSchemeScreenshots() {
   await mkdir(screenshotDir, { recursive: true });
+  const staleBaseNames = new Set(pages.map((page) => `${page.name}.png`));
+  for (const entry of await readdir(screenshotDir)) {
+    if (entry.endsWith(`-${colorScheme}.png`) || staleBaseNames.has(entry)) {
+      await unlink(join(screenshotDir, entry));
+    }
+  }
+}
+
+async function main() {
+  await cleanSchemeScreenshots();
 
   const port = await findPort();
   const baseUrl = `http://127.0.0.1:${port}`;
@@ -125,7 +150,7 @@ async function main() {
         if (item.setup) await item.setup(page);
         await page.waitForTimeout(250);
         await page.screenshot({
-          path: join(screenshotDir, `${item.name}.png`),
+          path: join(screenshotDir, `${item.name}-${colorScheme}.png`),
           clip: await contentClip(page),
         });
       }
@@ -137,7 +162,7 @@ async function main() {
     server.kill();
   }
 
-  console.log(`Screenshots written to ${screenshotDir}`);
+  console.log(`${colorScheme} screenshots written to ${screenshotDir}`);
 }
 
 await main();
