@@ -59,6 +59,11 @@ const fakeRoutes = `default via 100.64.12.1 dev wan0 table main proto dhcp src 1
 10.42.0.0/16 dev tailscale0 table 52
 local 192.168.88.1 dev br-lan table local proto kernel scope host src 192.168.88.1`
 
+const fakeDHCPLeases = `1782943200 84:2a:fd:11:22:33 192.168.88.24 workstation 01:84:2a:fd:11:22:33
+1782945000 dc:a6:32:44:55:66 192.168.88.31 printer *
+0 3c:06:30:77:88:99 192.168.88.2 core-switch *
+1782939600 aa:bb:cc:dd:ee:ff 192.168.88.52 phone 01:aa:bb:cc:dd:ee:ff`
+
 const fakeTailscale = `{
 	"BackendState": "Running",
 	"Self": {

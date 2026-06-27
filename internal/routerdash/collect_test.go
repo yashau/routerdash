@@ -28,6 +28,9 @@ func TestFakeHarnessCollectsWithoutSystemBinaries(t *testing.T) {
 	if diag := collector.Diagnostic(ctx, DiagnosticRequest{Tool: "mtr", Target: "1.1.1.1"}); !diag.Available || !strings.Contains(diag.Output, "HOST") {
 		t.Fatalf("fake mtr was not collected: %+v", diag)
 	}
+	if leases := collector.DHCPLeasesPage(ctx, PageRequest{Page: 1, PageSize: 10}); !leases.Available || len(leases.Leases) != 4 || leases.Leases[0].Hostname != "workstation" {
+		t.Fatalf("fake DHCP leases were not collected: %+v", leases)
+	}
 }
 
 func TestParseMeminfo(t *testing.T) {
@@ -90,6 +93,36 @@ func TestRoutesPagePaginatesServerSide(t *testing.T) {
 	}
 	if len(routes.Lines) != 2 || strings.Contains(routes.Output, "default via") {
 		t.Fatalf("unexpected paged route output: %+v", routes)
+	}
+}
+
+func TestParseDHCPLeases(t *testing.T) {
+	now := time.Unix(1782403200, 0)
+	leases, err := parseDHCPLeases("1782406800 aa:bb:cc:dd:ee:ff 192.168.1.10 laptop 01:aa\n0 11:22:33:44:55:66 192.168.1.2 * *", now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(leases) != 2 {
+		t.Fatalf("unexpected lease count: %d", len(leases))
+	}
+	if leases[0].Remaining != "1h 0m" || leases[0].Hostname != "laptop" || leases[0].ClientID != "01:aa" {
+		t.Fatalf("unexpected parsed lease: %+v", leases[0])
+	}
+	if leases[1].ExpiresAt != "never" || leases[1].Hostname != "" || leases[1].ClientID != "" {
+		t.Fatalf("unexpected static lease: %+v", leases[1])
+	}
+}
+
+func TestDHCPLeasesPagePaginatesServerSide(t *testing.T) {
+	collector := NewCollector(FakeRunner{}, func() time.Time {
+		return time.Date(2026, 6, 25, 12, 0, 0, 0, time.UTC)
+	})
+	leases := collector.DHCPLeasesPage(context.Background(), PageRequest{Page: 2, PageSize: 2})
+	if leases.Page == nil || leases.Page.Page != 2 || leases.Page.Total != 4 || leases.Page.TotalPages != 2 {
+		t.Fatalf("unexpected DHCP page metadata: %+v", leases.Page)
+	}
+	if len(leases.Leases) != 2 || leases.Leases[0].Hostname != "core-switch" {
+		t.Fatalf("unexpected paged leases: %+v", leases.Leases)
 	}
 }
 

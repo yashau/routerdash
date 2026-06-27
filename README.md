@@ -35,6 +35,7 @@ RouterDash keeps the main dashboard intentionally small:
 - CPU and memory usage
 - browser-local bandwidth chart
 - interface cards with addresses and live rates
+- dnsmasq DHCP leases
 - Tailscale headline state
 - rathole service state from matching systemd units
 - low-noise reachability checks for Google and Cloudflare DNS
@@ -42,6 +43,7 @@ RouterDash keeps the main dashboard intentionally small:
 Detailed pages are available for:
 
 - Tailscale status, advertised routes, peers, received routes, and route acceptance
+- dnsmasq DHCP leases with server-side pagination
 - nftables or iptables configuration, view-only
 - all installed route tables with server-side pagination
 - FRR OSPF/BGP summaries and running config output
@@ -84,6 +86,10 @@ Common tools:
 - `nft`
 - `iptables-save`
 - `vtysh`
+
+DHCP leases are read from `ROUTERDASH_DHCP_LEASES_FILE` when set, otherwise
+RouterDash tries common dnsmasq lease paths such as `/tmp/dhcp.leases` and
+`/var/lib/misc/dnsmasq.leases`.
 
 The binary itself has the web UI embedded, so there is no Node.js or pnpm
 dependency on the router.

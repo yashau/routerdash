@@ -108,6 +108,23 @@ type RouteTables struct {
 	Page   *PageInfo `json:"page,omitempty"`
 }
 
+type DHCPLeases struct {
+	Availability
+	Path   string      `json:"path,omitempty"`
+	Leases []DHCPLease `json:"leases,omitempty"`
+	Page   *PageInfo   `json:"page,omitempty"`
+}
+
+type DHCPLease struct {
+	ExpiresAt string `json:"expiresAt,omitempty"`
+	Remaining string `json:"remaining,omitempty"`
+	MAC       string `json:"mac"`
+	IP        string `json:"ip"`
+	Hostname  string `json:"hostname,omitempty"`
+	ClientID  string `json:"clientId,omitempty"`
+	Expired   bool   `json:"expired"`
+}
+
 type PageInfo struct {
 	Page       int  `json:"page"`
 	PageSize   int  `json:"pageSize"`

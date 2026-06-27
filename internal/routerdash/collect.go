@@ -299,6 +299,37 @@ func (c *Collector) RoutesPage(ctx context.Context, pageRequest PageRequest) Rou
 	}
 }
 
+func (c *Collector) DHCPLeasesPage(ctx context.Context, pageRequest PageRequest) DHCPLeases {
+	if c.fake {
+		leases, err := parseDHCPLeases(fakeDHCPLeases, c.now())
+		if err != nil {
+			return DHCPLeases{Availability: Availability{Available: false, Error: err.Error()}}
+		}
+		pageLeases, page := paginate(leases, pageRequest)
+		return DHCPLeases{
+			Availability: Availability{Available: true},
+			Path:         "fake:/dnsmasq.leases",
+			Leases:       pageLeases,
+			Page:         page,
+		}
+	}
+	raw, path, err := readDHCPLeasesFile(ctx)
+	if err != nil {
+		return DHCPLeases{Availability: Availability{Available: false, Error: err.Error()}}
+	}
+	leases, err := parseDHCPLeases(raw, c.now())
+	if err != nil {
+		return DHCPLeases{Availability: Availability{Available: false, Error: err.Error()}, Path: path}
+	}
+	pageLeases, page := paginate(leases, pageRequest)
+	return DHCPLeases{
+		Availability: Availability{Available: true},
+		Path:         path,
+		Leases:       pageLeases,
+		Page:         page,
+	}
+}
+
 func (c *Collector) FRR(ctx context.Context) FRRStatus {
 	ospf, ospfErr := c.runner.Run(ctx, "vtysh", "-c", "show ip ospf neighbor")
 	bgp, bgpErr := c.runner.Run(ctx, "vtysh", "-c", "show bgp summary")
@@ -596,6 +627,75 @@ func nonEmptyLines(raw string) []string {
 		}
 	}
 	return lines
+}
+
+func readDHCPLeasesFile(ctx context.Context) (string, string, error) {
+	if err := ctx.Err(); err != nil {
+		return "", "", err
+	}
+	candidates := []string{
+		os.Getenv("ROUTERDASH_DHCP_LEASES_FILE"),
+		"/tmp/dhcp.leases",
+		"/var/lib/misc/dnsmasq.leases",
+		"/var/lib/dnsmasq/dnsmasq.leases",
+	}
+	var tried []string
+	for _, candidate := range candidates {
+		if candidate == "" {
+			continue
+		}
+		raw, err := os.ReadFile(candidate)
+		if err == nil {
+			return string(raw), candidate, nil
+		}
+		tried = append(tried, candidate)
+	}
+	return "", "", fmt.Errorf("dnsmasq leases file not found; tried %s", strings.Join(tried, ", "))
+}
+
+func parseDHCPLeases(raw string, now time.Time) ([]DHCPLease, error) {
+	var leases []DHCPLease
+	for lineNumber, line := range strings.Split(strings.TrimSpace(raw), "\n") {
+		fields := strings.Fields(line)
+		if len(fields) == 0 {
+			continue
+		}
+		if len(fields) < 5 {
+			return nil, fmt.Errorf("invalid dnsmasq lease line %d", lineNumber+1)
+		}
+		expiresUnix, err := strconv.ParseInt(fields[0], 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("invalid dnsmasq lease expiry on line %d: %w", lineNumber+1, err)
+		}
+		lease := DHCPLease{
+			MAC:      fields[1],
+			IP:       fields[2],
+			Hostname: emptyStar(fields[3]),
+			ClientID: emptyStar(strings.Join(fields[4:], " ")),
+		}
+		if expiresUnix == 0 {
+			lease.ExpiresAt = "never"
+			lease.Remaining = "never"
+		} else {
+			expiresAt := time.Unix(expiresUnix, 0)
+			lease.ExpiresAt = expiresAt.Format(time.RFC3339)
+			lease.Expired = !expiresAt.After(now)
+			if lease.Expired {
+				lease.Remaining = "expired"
+			} else {
+				lease.Remaining = humanDuration(expiresAt.Sub(now))
+			}
+		}
+		leases = append(leases, lease)
+	}
+	return leases, nil
+}
+
+func emptyStar(value string) string {
+	if value == "*" {
+		return ""
+	}
+	return value
 }
 
 func paginate[T any](items []T, request PageRequest) ([]T, *PageInfo) {

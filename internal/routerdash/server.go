@@ -54,6 +54,9 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/routes", s.json(func(r *http.Request) any {
 		return s.collector.RoutesPage(r.Context(), pageRequest(r, 50))
 	}))
+	s.mux.HandleFunc("GET /api/dhcp", s.json(func(r *http.Request) any {
+		return s.collector.DHCPLeasesPage(r.Context(), pageRequest(r, 50))
+	}))
 	s.mux.HandleFunc("GET /api/frr", s.json(func(r *http.Request) any {
 		return s.collector.FRR(r.Context())
 	}))

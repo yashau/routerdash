@@ -78,6 +78,7 @@ Backend:
 Frontend:
 
 - `web/src/routes/+page.svelte`: main dashboard.
+- `web/src/routes/dhcp/+page.svelte`: dnsmasq DHCP leases with server-side pagination.
 - `web/src/routes/tailscale/+page.svelte`: Tailscale details with server-side peer pagination.
 - `web/src/routes/rathole/+page.svelte`: rathole service/unit details.
 - `web/src/routes/firewall/+page.svelte`: nftables or iptables output.
@@ -96,6 +97,7 @@ Current API routes:
 - `GET /api/version`
 - `GET /api/summary`
 - `GET /api/metrics`
+- `GET /api/dhcp?page=1&pageSize=50`
 - `GET /api/tailscale?page=1&pageSize=10`
 - `GET /api/rathole`
 - `GET /api/firewall`
@@ -143,6 +145,14 @@ ip route show table all
 
 Routes are paginated server-side so the browser does not receive huge routing tables.
 
+DHCP leases are read from `ROUTERDASH_DHCP_LEASES_FILE` when set, then common dnsmasq lease paths:
+
+- `/tmp/dhcp.leases`
+- `/var/lib/misc/dnsmasq.leases`
+- `/var/lib/dnsmasq/dnsmasq.leases`
+
+DHCP leases are paginated server-side so the browser does not receive huge lease files.
+
 ## Frontend Conventions
 
 - SvelteKit is under `web/` and uses pnpm.
@@ -154,6 +164,7 @@ Routes are paginated server-side so the browser does not receive huge routing ta
 - Header hostname is trimmed in both the header and the browser title.
 - The nav intentionally contains only:
   - Dashboard
+  - DHCP
   - Tailscale
   - Firewall label dynamically shown as `nftables` or `iptables`
   - Routes

@@ -93,6 +93,22 @@ export type RouteTables = Availability & {
   page?: PageInfo;
 };
 
+export type DHCPLeases = Availability & {
+  path?: string;
+  leases?: DHCPLease[];
+  page?: PageInfo;
+};
+
+export type DHCPLease = {
+  expiresAt?: string;
+  remaining?: string;
+  mac: string;
+  ip: string;
+  hostname?: string;
+  clientId?: string;
+  expired: boolean;
+};
+
 export type PageInfo = {
   page: number;
   pageSize: number;

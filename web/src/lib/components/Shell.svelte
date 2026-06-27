@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Activity, Route, Shield, Stethoscope, Waypoints } from '@lucide/svelte';
+	import { Activity, Network, Route, Shield, Stethoscope, Waypoints } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { getJSON, type FirewallStatus, type Summary, type VersionInfo } from '$lib/api';
@@ -13,6 +13,7 @@
 
 	const nav = [
 		{ href: '/', label: 'Dashboard', short: 'Dash', icon: Activity },
+		{ href: '/dhcp', label: 'DHCP', short: 'DHCP', icon: Network },
 		{ href: '/tailscale', label: 'Tailscale', short: 'TS', icon: Route },
 		{ href: '/firewall', label: 'Firewall', short: 'FW', icon: Shield },
 		{ href: '/routes', label: 'Routes', short: 'Rte', icon: Route },

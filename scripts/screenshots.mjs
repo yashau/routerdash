@@ -17,6 +17,7 @@ const viewport = {
 
 const pages = [
   { path: "/", name: "dashboard", setup: waitForBandwidthChart },
+  { path: "/dhcp", name: "dhcp" },
   { path: "/tailscale", name: "tailscale" },
   { path: "/firewall", name: "firewall" },
   { path: "/routes", name: "routes" },
@@ -82,7 +83,7 @@ async function launchChromium(chromium) {
 
 async function runDiagnostic(page) {
   await page.getByRole("button", { name: "Run" }).click();
-  await page.waitForFunction(() => document.body.textContent?.includes("icmp_seq="), {
+  await page.waitForFunction(() => document.body.textContent?.includes("icmp_seq="), undefined, {
     timeout: 5000,
   });
 }
@@ -94,6 +95,7 @@ async function waitForBandwidthChart(page) {
         .querySelector("[data-bandwidth-chart] [data-series='rx']")
         ?.getAttribute("d")
         ?.match(/\bL\b/g)?.length ?? 0) >= 3,
+    undefined,
     { timeout: 12000 },
   );
 }
@@ -144,9 +146,11 @@ async function main() {
       const page = await context.newPage();
       for (const item of pages) {
         await page.goto(`${baseUrl}${item.path}`, { waitUntil: "networkidle" });
-        await page.waitForFunction(() => document.body.textContent?.includes("routerdash-lab"), {
-          timeout: 5000,
-        });
+        await page.waitForFunction(
+          () => document.body.textContent?.includes("routerdash-lab"),
+          undefined,
+          { timeout: 5000 },
+        );
         if (item.setup) await item.setup(page);
         await page.waitForTimeout(250);
         await page.screenshot({
