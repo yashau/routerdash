@@ -42,7 +42,7 @@ RouterDash keeps the main dashboard intentionally small:
 
 Detailed pages are available for:
 
-- Tailscale status, advertised routes, peers, received routes, and route acceptance
+- Tailscale status, advertised route approval state, peers, received routes, and route acceptance
 - dnsmasq DHCP leases with server-side pagination
 - nftables or iptables configuration, view-only
 - all installed route tables with server-side pagination

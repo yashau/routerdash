@@ -53,10 +53,17 @@ export type TailscaleStatus = Availability & {
   backendState?: string;
   acceptingRoutes: boolean;
   advertisedRoutes?: string[];
+  advertisedRouteStates?: TailscaleRoute[];
   uptime?: string;
   selfIps?: string[];
   peers?: TailscalePeer[];
   page?: PageInfo;
+};
+
+export type TailscaleRoute = {
+  route: string;
+  approved: boolean;
+  status: string;
 };
 
 export type TailscalePeer = {

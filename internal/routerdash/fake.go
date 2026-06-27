@@ -22,6 +22,8 @@ func (FakeRunner) Run(_ context.Context, name string, args ...string) (string, e
 		return "PING host: 56 data bytes\n64 bytes from host: icmp_seq=1 ttl=57 time=12.8 ms\n", nil
 	case key == "tailscale status --json":
 		return fakeTailscale, nil
+	case key == "tailscale debug prefs":
+		return fakeTailscalePrefs, nil
 	case key == "systemctl show tailscaled.service --property=ActiveEnterTimestamp --value":
 		return "Thu 2026-06-25 08:00:00 +00\n", nil
 	case strings.HasPrefix(key, "systemctl list-units"):
@@ -86,6 +88,10 @@ const fakeTailscale = `{
 		}
 	},
 	"CurrentTailnet": {"MagicDNSSuffix": "tailnet.example.ts.net"}
+}`
+
+const fakeTailscalePrefs = `{
+	"AdvertiseRoutes": ["192.168.88.0/24", "192.168.99.0/24"]
 }`
 
 const fakeRatholeUnits = `ratholec@edge.service loaded active running Rathole client edge tunnel

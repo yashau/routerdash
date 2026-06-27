@@ -218,9 +218,22 @@ func (c *Collector) TailscalePage(ctx context.Context, pageRequest PageRequest) 
 	if status.Uptime == "" {
 		status.Uptime = c.tailscaleServiceUptime(ctx)
 	}
+	if configuredRoutes, routesErr := c.tailscaleConfiguredRoutes(ctx); routesErr == nil && len(configuredRoutes) > 0 {
+		approvedRoutes := approvedTailscaleRoutes(status.AdvertisedRouteStates)
+		status.AdvertisedRoutes = configuredRoutes
+		status.AdvertisedRouteStates = tailscaleRouteStates(configuredRoutes, approvedRoutes)
+	}
 	status.Peers, status.Page = paginate(status.Peers, pageRequest)
 	status.Availability = Availability{Available: true}
 	return status
+}
+
+func (c *Collector) tailscaleConfiguredRoutes(ctx context.Context) ([]string, error) {
+	out, err := c.runner.Run(ctx, "tailscale", "debug", "prefs")
+	if err != nil {
+		return nil, err
+	}
+	return parseTailscalePrefs(out)
 }
 
 func (c *Collector) tailscaleServiceUptime(ctx context.Context) string {
@@ -565,6 +578,10 @@ type tailscaleJSON struct {
 	} `json:"Peer"`
 }
 
+type tailscalePrefsJSON struct {
+	AdvertiseRoutes []string `json:"AdvertiseRoutes"`
+}
+
 func parseTailscale(raw string, now time.Time) (TailscaleStatus, error) {
 	var source tailscaleJSON
 	if err := json.Unmarshal([]byte(raw), &source); err != nil {
@@ -575,10 +592,13 @@ func parseTailscale(raw string, now time.Time) (TailscaleStatus, error) {
 		SelfIPs:         source.Self.TailscaleIPs,
 		AcceptingRoutes: len(source.Self.AllowedIPs) > len(source.Self.TailscaleIPs),
 	}
-	status.AdvertisedRoutes = source.Self.AdvertisedRoutes
-	if len(status.AdvertisedRoutes) == 0 {
-		status.AdvertisedRoutes = source.Self.PrimaryRoutes
+	approvedRoutes := uniqueStrings(source.Self.PrimaryRoutes)
+	configuredRoutes := uniqueStrings(source.Self.AdvertisedRoutes)
+	if len(configuredRoutes) == 0 {
+		configuredRoutes = approvedRoutes
 	}
+	status.AdvertisedRoutes = configuredRoutes
+	status.AdvertisedRouteStates = tailscaleRouteStates(configuredRoutes, approvedRoutes)
 	if started, err := time.Parse(time.RFC3339, source.Self.Started); err == nil {
 		status.Uptime = humanDuration(now.Sub(started))
 	}
@@ -600,6 +620,55 @@ func parseTailscale(raw string, now time.Time) (TailscaleStatus, error) {
 	}
 	sort.Slice(status.Peers, func(i, j int) bool { return status.Peers[i].Name < status.Peers[j].Name })
 	return status, nil
+}
+
+func parseTailscalePrefs(raw string) ([]string, error) {
+	var source tailscalePrefsJSON
+	if err := json.Unmarshal([]byte(raw), &source); err != nil {
+		return nil, err
+	}
+	return uniqueStrings(source.AdvertiseRoutes), nil
+}
+
+func tailscaleRouteStates(configuredRoutes, approvedRoutes []string) []TailscaleRoute {
+	approved := make(map[string]bool, len(approvedRoutes))
+	for _, route := range approvedRoutes {
+		approved[route] = true
+	}
+	states := make([]TailscaleRoute, 0, len(configuredRoutes))
+	for _, route := range uniqueStrings(configuredRoutes) {
+		state := TailscaleRoute{Route: route, Status: "not approved yet"}
+		if approved[route] {
+			state.Approved = true
+			state.Status = "approved"
+		}
+		states = append(states, state)
+	}
+	return states
+}
+
+func approvedTailscaleRoutes(states []TailscaleRoute) []string {
+	var routes []string
+	for _, state := range states {
+		if state.Approved {
+			routes = append(routes, state.Route)
+		}
+	}
+	return routes
+}
+
+func uniqueStrings(values []string) []string {
+	seen := make(map[string]bool, len(values))
+	var result []string
+	for _, value := range values {
+		value = strings.TrimSpace(value)
+		if value == "" || seen[value] {
+			continue
+		}
+		seen[value] = true
+		result = append(result, value)
+	}
+	return result
 }
 
 func parseSystemdTimestamp(raw string) (time.Time, bool) {

@@ -22,7 +22,7 @@ func TestFakeHarnessCollectsWithoutSystemBinaries(t *testing.T) {
 	if rathole := collector.Rathole(ctx); !rathole.Available || !rathole.Active || len(rathole.Units) != 2 || !strings.Contains(rathole.Output, "ratholec@edge.service") {
 		t.Fatalf("fake rathole units were not collected: %+v", rathole)
 	}
-	if tailscale := collector.Tailscale(ctx); !tailscale.Available || tailscale.Uptime != "4h 0m" || !contains(tailscale.AdvertisedRoutes, "192.168.88.0/24") {
+	if tailscale := collector.Tailscale(ctx); !tailscale.Available || tailscale.Uptime != "4h 0m" || !contains(tailscale.AdvertisedRoutes, "192.168.99.0/24") {
 		t.Fatalf("fake tailscale was not collected: %+v", tailscale)
 	}
 	if diag := collector.Diagnostic(ctx, DiagnosticRequest{Tool: "mtr", Target: "1.1.1.1"}); !diag.Available || !strings.Contains(diag.Output, "HOST") {
@@ -60,7 +60,7 @@ func TestParseRatholeUnits(t *testing.T) {
 	}
 }
 
-func TestParseTailscaleUsesPrimaryRoutesWhenAdvertisedRoutesMissing(t *testing.T) {
+func TestParseTailscaleMarksPrimaryRoutesApproved(t *testing.T) {
 	status, err := parseTailscale(`{
 		"BackendState": "Running",
 		"Self": {
@@ -75,6 +75,38 @@ func TestParseTailscaleUsesPrimaryRoutesWhenAdvertisedRoutesMissing(t *testing.T
 	}
 	if !contains(status.AdvertisedRoutes, "10.10.31.0/24") {
 		t.Fatalf("expected primary routes to be advertised routes: %+v", status)
+	}
+	if len(status.AdvertisedRouteStates) != 1 || !status.AdvertisedRouteStates[0].Approved {
+		t.Fatalf("expected primary route to be approved: %+v", status.AdvertisedRouteStates)
+	}
+}
+
+func TestTailscaleDebugPrefsAddsUnapprovedRoutes(t *testing.T) {
+	collector := NewCollector(FakeRunner{}, func() time.Time {
+		return time.Date(2026, 6, 25, 12, 0, 0, 0, time.UTC)
+	})
+	status := collector.Tailscale(context.Background())
+	if len(status.AdvertisedRouteStates) != 2 {
+		t.Fatalf("expected route states from debug prefs: %+v", status.AdvertisedRouteStates)
+	}
+	var sawUnapproved bool
+	for _, route := range status.AdvertisedRouteStates {
+		if route.Route == "192.168.99.0/24" && !route.Approved && route.Status == "not approved yet" {
+			sawUnapproved = true
+		}
+	}
+	if !sawUnapproved {
+		t.Fatalf("expected unapproved route from debug prefs: %+v", status.AdvertisedRouteStates)
+	}
+}
+
+func TestParseTailscalePrefs(t *testing.T) {
+	routes, err := parseTailscalePrefs(`{"AdvertiseRoutes":["192.168.69.0/24","192.168.69.0/24","192.168.70.0/24"]}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(routes) != 2 || routes[0] != "192.168.69.0/24" || routes[1] != "192.168.70.0/24" {
+		t.Fatalf("unexpected prefs routes: %+v", routes)
 	}
 }
 

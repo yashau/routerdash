@@ -63,13 +63,20 @@ type Probe struct {
 
 type TailscaleStatus struct {
 	Availability
-	BackendState     string          `json:"backendState,omitempty"`
-	AcceptingRoutes  bool            `json:"acceptingRoutes"`
-	AdvertisedRoutes []string        `json:"advertisedRoutes,omitempty"`
-	Uptime           string          `json:"uptime,omitempty"`
-	SelfIPs          []string        `json:"selfIps,omitempty"`
-	Peers            []TailscalePeer `json:"peers,omitempty"`
-	Page             *PageInfo       `json:"page,omitempty"`
+	BackendState          string           `json:"backendState,omitempty"`
+	AcceptingRoutes       bool             `json:"acceptingRoutes"`
+	AdvertisedRoutes      []string         `json:"advertisedRoutes,omitempty"`
+	AdvertisedRouteStates []TailscaleRoute `json:"advertisedRouteStates,omitempty"`
+	Uptime                string           `json:"uptime,omitempty"`
+	SelfIPs               []string         `json:"selfIps,omitempty"`
+	Peers                 []TailscalePeer  `json:"peers,omitempty"`
+	Page                  *PageInfo        `json:"page,omitempty"`
+}
+
+type TailscaleRoute struct {
+	Route    string `json:"route"`
+	Approved bool   `json:"approved"`
+	Status   string `json:"status"`
 }
 
 type TailscalePeer struct {

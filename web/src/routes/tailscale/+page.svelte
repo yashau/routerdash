@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
+	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Table from '$lib/components/ui/table/index.js';
@@ -48,8 +49,22 @@
 		<Card.Header>
 			<Card.Title>Advertised Routes</Card.Title>
 		</Card.Header>
-		<Card.Content>
-			<p class="text-sm">{status?.advertisedRoutes?.join(', ') || 'No advertised routes reported.'}</p>
+		<Card.Content class="space-y-2">
+			{#if status?.advertisedRouteStates?.length}
+				{#each status.advertisedRouteStates as route}
+					<div class="flex flex-col gap-1 rounded-md border p-2 text-sm sm:flex-row sm:items-center sm:justify-between">
+						<span class="break-words font-medium [overflow-wrap:anywhere]">{route.route}</span>
+						<Badge
+							variant={route.approved ? 'outline' : 'secondary'}
+							class={route.approved ? 'border-emerald-300 text-emerald-700 dark:border-emerald-800 dark:text-emerald-300' : ''}
+						>
+							{route.status}
+						</Badge>
+					</div>
+				{/each}
+			{:else}
+				<p class="text-sm">No advertised routes reported.</p>
+			{/if}
 		</Card.Content>
 	</Card.Root>
 </div>

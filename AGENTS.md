@@ -132,7 +132,8 @@ Rathole status discovers common systemd unit names:
 Tailscale parsing supports current `tailscale status --json` shapes:
 
 - self IPs from `Self.TailscaleIPs`
-- advertised routes from `Self.AdvertisedRoutes`, falling back to `Self.PrimaryRoutes`
+- configured advertised routes from `tailscale debug prefs` field `AdvertiseRoutes`
+- approved advertised routes from `Self.PrimaryRoutes`
 - route acceptance inferred from `AllowedIPs` count vs self IP count
 - uptime from `Self.Started` when present, otherwise from `systemctl show tailscaled.service --property=ActiveEnterTimestamp --value`
 - received routes per peer from `Peer.*.PrimaryRoutes`
